@@ -326,7 +326,7 @@ template class LIBYANG_CPP_EXPORT Iterator<Meta, IterationType::Meta>;
  *
  * Wraps `lyd_free_meta_single`.
  */
-Iterator<Meta, IterationType::Meta> MetaCollection::erase(Iterator<Meta, IterationType::Meta> what)
+MetaCollection::iterator_type MetaCollection::erase(iterator_type what)
 {
     auto toDelete = what;
     auto next = ++what;

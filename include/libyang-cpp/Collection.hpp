@@ -135,7 +135,8 @@ protected:
  */
 class LIBYANG_CPP_EXPORT MetaCollection : public Collection<Meta, IterationType::Meta> {
 public:
-    Iterator<Meta, IterationType::Meta> erase(Iterator<Meta, IterationType::Meta> what);
+    using iterator_type = Iterator<Meta, IterationType::Meta>;
+    iterator_type erase(iterator_type what);
 private:
     friend DataNode;
     using Collection<Meta, IterationType::Meta>::Collection;
