@@ -143,7 +143,7 @@ public:
     friend DataNodeTerm;
     friend Iterator<DataNode, IterationType::Dfs>;
     friend Iterator<DataNode, IterationType::Sibling>;
-    friend Iterator<Meta, IterationType::Meta>;
+    friend Iterator<Meta, IterationType::MetaAttr>;
     friend SetIterator<DataNode>;
     friend LIBYANG_CPP_EXPORT DataNode wrapRawNode(lyd_node* node, std::shared_ptr<void> customContext);
     friend LIBYANG_CPP_EXPORT const DataNode wrapUnmanagedRawNode(const lyd_node* node);
@@ -192,7 +192,7 @@ public:
     bool isInternal() const;
 
 private:
-    friend Iterator<Meta, IterationType::Meta>;
+    friend Iterator<Meta, IterationType::MetaAttr>;
     Meta(lyd_meta* meta, std::shared_ptr<ly_ctx> ctx);
 
     std::string m_name;

@@ -133,12 +133,12 @@ protected:
  *
  * For more information, check DataNode::meta.
  */
-class LIBYANG_CPP_EXPORT MetaCollection : public Collection<Meta, IterationType::Meta> {
+class LIBYANG_CPP_EXPORT MetaCollection : public Collection<Meta, IterationType::MetaAttr> {
 public:
-    using iterator_type = Iterator<Meta, IterationType::Meta>;
+    using iterator_type = Iterator<Meta, IterationType::MetaAttr>;
     iterator_type erase(iterator_type what);
 private:
     friend DataNode;
-    using Collection<Meta, IterationType::Meta>::Collection;
+    using Collection<Meta, IterationType::MetaAttr>::Collection;
 };
 }

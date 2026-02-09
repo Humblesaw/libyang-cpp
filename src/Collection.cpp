@@ -315,8 +315,8 @@ template class LIBYANG_CPP_EXPORT Iterator<SchemaNode, IterationType::Sibling>;
 #if __GNUC__ && !__clang__
 #pragma GCC diagnostic ignored "-Wattributes"
 #endif
-template class LIBYANG_CPP_EXPORT Collection<Meta, IterationType::Meta>;
-template class LIBYANG_CPP_EXPORT Iterator<Meta, IterationType::Meta>;
+template class LIBYANG_CPP_EXPORT Collection<Meta, IterationType::MetaAttr>;
+template class LIBYANG_CPP_EXPORT Iterator<Meta, IterationType::MetaAttr>;
 #pragma GCC diagnostic pop
 
 /**
