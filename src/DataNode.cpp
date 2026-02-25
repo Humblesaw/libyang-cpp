@@ -527,61 +527,10 @@ enum class OperationScope {
 };
 
 /**
- * @brief INTERNAL: handle memory management when working with low-level tree functions
- *
- * Some C-level libyang operations might split or combine trees into independent forests, which means that the
- * C++-wrapper's ideas about "what lyd_node belongs to which internal_refcount have to be updated. That's what
- * this function is doing.
- *
- * First, we gather nodes that are going to be affected (i.e., whose internal_refount should be switched to the new one).
- * Then, the requested operation is invoked.
- * Finally, if there are any orphaned, leftover C nodes, these are released.
+ * @brief INTERNAL: remap the m_refs, a helper for handleLyTreeOperation
  */
-template <typename Operation, typename OperationScope>
-void handleLyTreeOperation(DataNode* affectedNode, Operation operation, OperationScope scope, std::shared_ptr<internal_refcount> newRefs)
+void remapRefs(std::shared_ptr<internal_refcount> oldRefs, std::shared_ptr<internal_refcount> newRefs, const std::vector<DataNode*> wrappedSiblings)
 {
-    std::vector<DataNode*> wrappedSiblings{affectedNode};
-    if (scope == OperationScope::AffectsFollowingSiblings) {
-        auto fs = affectedNode->gatherReachableFollowingSiblings();
-        wrappedSiblings.reserve(fs.size() + 1 /* the original node */);
-        std::copy(fs.begin(), fs.end(), std::back_inserter(wrappedSiblings));
-    }
-
-    auto oldRefs = affectedNode->m_refs;
-
-    if (!oldRefs) {
-        // The node is an unmanaged node, we will do nothing.
-        operation();
-        return;
-    }
-
-    // Find a node that is not going to be affected by the operation. That node will be used as a handle to the old
-    // part of the original tree (the one to be released if it becomes unreachable from the C++ wrappers).
-    //
-    // Let's try the parent of the affected node as the first candidate.
-    auto oldTree = reinterpret_cast<lyd_node*>(affectedNode->m_node->parent);
-    if (!oldTree) {
-        // If there's no parent, consider all siblings, starting from the first (ever) one, and ignoring those
-        // siblings that cannot be used.
-        auto candidate = lyd_first_sibling(affectedNode->m_node);
-        while (candidate) {
-            if (candidate != affectedNode->m_node) {
-                oldTree = candidate;
-                break;
-            }
-
-            if (scope == OperationScope::AffectsFollowingSiblings) {
-                // all the remaining ones are going to be affected -> no luck
-                break;
-            }
-
-            // none of the preceding siblings have matched so far; try the next ones
-            candidate = candidate->next;
-        }
-        // If we didn't find any such sibling (oldTree == nullptr), we're updating the refcounter of all siblings,
-        // and there's nothing that's being orphaned.
-    }
-
     if (oldRefs != newRefs) { // If the nodes already have the new refcounter, then there's nothing to do.
         for (auto& node : wrappedSiblings) {
             node->unregisterRef();
@@ -630,8 +579,74 @@ void handleLyTreeOperation(DataNode* affectedNode, Operation operation, Operatio
             }
         }
     }
+}
 
-    operation();
+/**
+ * @brief INTERNAL: handle memory management when working with low-level tree functions
+ *
+ * Some C-level libyang operations might split or combine trees into independent forests, which means that the
+ * C++-wrapper's ideas about "what lyd_node belongs to which internal_refcount have to be updated. That's what
+ * this function is doing.
+ *
+ * First, we gather nodes that are going to be affected (i.e., whose internal_refount should be switched to the new one).
+ * Then, the requested operation is invoked.
+ * Finally, if there are any orphaned, leftover C nodes, these are released.
+ */
+template <typename Operation, typename OperationScope>
+void handleLyTreeOperation(DataNode* affectedNode, Operation operation, const std::string& operationName, OperationScope scope, std::shared_ptr<internal_refcount> newRefs)
+{
+    std::vector<DataNode*> wrappedSiblings{affectedNode};
+    if (scope == OperationScope::AffectsFollowingSiblings) {
+        auto fs = affectedNode->gatherReachableFollowingSiblings();
+        wrappedSiblings.reserve(fs.size() + 1 /* the original node */);
+        std::copy(fs.begin(), fs.end(), std::back_inserter(wrappedSiblings));
+    }
+
+    auto oldRefs = affectedNode->m_refs;
+
+    if (!oldRefs) {
+        // The node is an unmanaged node, we will do nothing.
+        auto res = operation();
+        throwIfError(res, operationName);
+        return;
+    }
+
+    // Find a node that is not going to be affected by the operation. That node will be used as a handle to the old
+    // part of the original tree (the one to be released if it becomes unreachable from the C++ wrappers).
+    //
+    // Let's try the parent of the affected node as the first candidate.
+    auto oldTree = reinterpret_cast<lyd_node*>(affectedNode->m_node->parent);
+    if (!oldTree) {
+        // If there's no parent, consider all siblings, starting from the first (ever) one, and ignoring those
+        // siblings that cannot be used.
+        auto candidate = lyd_first_sibling(affectedNode->m_node);
+        while (candidate) {
+            if (candidate != affectedNode->m_node) {
+                oldTree = candidate;
+                break;
+            }
+
+            if (scope == OperationScope::AffectsFollowingSiblings) {
+                // all the remaining ones are going to be affected -> no luck
+                break;
+            }
+
+            // none of the preceding siblings have matched so far; try the next ones
+            candidate = candidate->next;
+        }
+        // If we didn't find any such sibling (oldTree == nullptr), we're updating the refcounter of all siblings,
+        // and there's nothing that's being orphaned.
+    }
+
+    remapRefs(oldRefs, newRefs, wrappedSiblings);
+    auto res = operation();
+    try {
+        throwIfError(res, operationName);
+    } catch (libyang::Error& e) {
+        // undo the refs update in case of a failed operation
+        remapRefs(newRefs, oldRefs, wrappedSiblings);
+        throw;
+    }
 
     // If oldTree exists and we don't hold any references to it, we must also free it.
     if (oldTree && oldRefs->nodes.size() == 0) {
@@ -647,8 +662,8 @@ void handleLyTreeOperation(DataNode* affectedNode, Operation operation, Operatio
 void DataNode::unlink()
 {
     handleLyTreeOperation(this, [this] () {
-        lyd_unlink_tree(m_node);
-    }, OperationScope::JustThisNode, std::make_shared<internal_refcount>(m_refs ? m_refs->context : nullptr));
+        return lyd_unlink_tree(m_node);
+    }, "lyd_unlink_tree", OperationScope::JustThisNode, std::make_shared<internal_refcount>(m_refs ? m_refs->context : nullptr));
 }
 
 /**
@@ -682,8 +697,8 @@ std::vector<DataNode*> DataNode::gatherReachableFollowingSiblings()
 void DataNode::unlinkWithSiblings()
 {
     handleLyTreeOperation(this, [this] {
-            lyd_unlink_siblings(m_node);
-    }, OperationScope::AffectsFollowingSiblings, std::make_shared<internal_refcount>(m_refs ? m_refs->context : nullptr));
+            return lyd_unlink_siblings(m_node);
+    }, "lyd_unlink_siblings", OperationScope::AffectsFollowingSiblings, std::make_shared<internal_refcount>(m_refs ? m_refs->context : nullptr));
 }
 
 /**
@@ -697,8 +712,8 @@ void DataNode::unlinkWithSiblings()
 void DataNode::insertChild(DataNode toInsert)
 {
     handleLyTreeOperation(&toInsert, [this, &toInsert] {
-        lyd_insert_child(this->m_node, toInsert.m_node);
-    }, toInsert.parent() ? OperationScope::JustThisNode : OperationScope::AffectsFollowingSiblings, m_refs);
+        return lyd_insert_child(this->m_node, toInsert.m_node);
+    }, "lyd_insert_child", toInsert.parent() ? OperationScope::JustThisNode : OperationScope::AffectsFollowingSiblings, m_refs);
 }
 
 /**
@@ -715,8 +730,8 @@ DataNode DataNode::insertSibling(DataNode toInsert)
 {
     lyd_node* firstSibling;
     handleLyTreeOperation(&toInsert, [this, &toInsert, &firstSibling] {
-        lyd_insert_sibling(this->m_node, toInsert.m_node, &firstSibling);
-    }, toInsert.parent() ? OperationScope::JustThisNode : OperationScope::AffectsFollowingSiblings, m_refs);
+        return lyd_insert_sibling(this->m_node, toInsert.m_node, &firstSibling);
+    }, "lyd_insert_sibling", toInsert.parent() ? OperationScope::JustThisNode : OperationScope::AffectsFollowingSiblings, m_refs);
 
     return DataNode{firstSibling, m_refs};
 }
@@ -729,8 +744,8 @@ DataNode DataNode::insertSibling(DataNode toInsert)
 void DataNode::insertAfter(DataNode toInsert)
 {
     handleLyTreeOperation(&toInsert, [this, &toInsert] {
-        lyd_insert_after(this->m_node, toInsert.m_node);
-    }, OperationScope::JustThisNode, m_refs);
+        return lyd_insert_after(this->m_node, toInsert.m_node);
+    }, "lyd_insert_after", OperationScope::JustThisNode, m_refs);
 }
 
 /**
@@ -741,8 +756,8 @@ void DataNode::insertAfter(DataNode toInsert)
 void DataNode::insertBefore(DataNode toInsert)
 {
     handleLyTreeOperation(&toInsert, [this, &toInsert] {
-        lyd_insert_before(this->m_node, toInsert.m_node);
-    }, OperationScope::JustThisNode, m_refs);
+        return lyd_insert_before(this->m_node, toInsert.m_node);
+    }, "lyd_insert_before", OperationScope::JustThisNode, m_refs);
 }
 
 /**

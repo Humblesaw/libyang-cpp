@@ -694,6 +694,24 @@ TEST_CASE("Data Node manipulation")
         }
     }
 
+    DOCTEST_SUBCASE("DataNode::unlink list keys")
+    {
+        auto root = ctx.parseData(R"({
+            "example-schema:person": [
+                {"name": "a", "salary": 666},
+                {"name": "b", "salary": 42}
+            ]
+        })"s, libyang::DataFormat::JSON);
+        REQUIRE(!!root);
+
+        auto b = root->findPath("/example-schema:person[name='b']/name");
+        REQUIRE(!!b);
+        REQUIRE_THROWS_WITH_AS(b->unlink(), "lyd_unlink_tree: LY_EINVAL", libyang::Error);
+
+        REQUIRE(!!root->findPath("/example-schema:person[name='a']"));
+        REQUIRE(!!root->findPath("/example-schema:person[name='b']"));
+    }
+
     DOCTEST_SUBCASE("DataNode::unlinkWithSiblings")
     {
         DOCTEST_SUBCASE("Nodes have no parent")

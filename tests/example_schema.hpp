@@ -101,6 +101,10 @@ module example-schema {
             type string;
         }
 
+        leaf salary {
+            type uint32;
+        }
+
         notification event {
             leaf description {
                 type string;

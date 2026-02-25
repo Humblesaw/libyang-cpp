@@ -84,8 +84,7 @@ private:
     friend Context;
     friend LIBYANG_CPP_EXPORT Set<DataNode> findXPathAt(const std::optional<libyang::DataNode>& contextNode, const libyang::DataNode& forest, const std::string& xpath);
 
-    template <typename Operation, typename Siblings>
-    friend void handleLyTreeOperation(DataNode* affectedNode, Operation operation, Siblings siblings, std::shared_ptr<internal_refcount> newRefs);
+    friend void remapRefs(std::shared_ptr<internal_refcount> oldRefs, std::shared_ptr<internal_refcount> newRefs, const std::vector<DataNode*> wrappedSiblings);
     void invalidate();
     void throwIfInvalid() const;
 

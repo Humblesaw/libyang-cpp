@@ -120,8 +120,7 @@ protected:
     mutable std::set<Iterator<NodeType, ITER_TYPE>*> m_iterators;
     void invalidate();
 
-    template <typename Operation, typename Siblings>
-    friend void handleLyTreeOperation(DataNode* affectedNode, Operation operation, Siblings siblings, std::shared_ptr<internal_refcount> newRefs);
+    friend void remapRefs(std::shared_ptr<internal_refcount> oldRefs, std::shared_ptr<internal_refcount> newRefs, const std::vector<DataNode*> wrappedSiblings);
 
     void throwIfInvalid() const;
 };
