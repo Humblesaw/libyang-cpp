@@ -58,9 +58,6 @@ LIBYANG_CPP_EXPORT const DataNode wrapUnmanagedRawNode(const lyd_node* node);
 LIBYANG_CPP_EXPORT lyd_node* releaseRawNode(DataNode node);
 LIBYANG_CPP_EXPORT lyd_node* getRawNode(DataNode node);
 
-template <typename Operation, typename Siblings>
-void handleLyTreeOperation(DataNode* affectedNode, Operation operation, Siblings siblings, std::shared_ptr<internal_refcount> newRefs);
-
 LIBYANG_CPP_EXPORT void validateAll(std::optional<libyang::DataNode>& node, const std::optional<ValidationOptions>& opts = std::nullopt);
 LIBYANG_CPP_EXPORT void validateOp(libyang::DataNode& input, const std::optional<libyang::DataNode>& opsTree, OperationType opType);
 

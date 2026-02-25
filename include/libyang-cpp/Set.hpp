@@ -23,9 +23,6 @@ class Context;
 template <typename NodeType>
 class Set;
 
-template <typename Operation, typename Siblings>
-void handleLyTreeOperation(DataNode* affectedNode, Operation operation, Siblings siblings, std::shared_ptr<internal_refcount> newRefs);
-
 struct internal_refcount;
 
 template <typename NodeType>

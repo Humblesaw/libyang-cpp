@@ -32,9 +32,6 @@ class SchemaNode;
 
 class DataNode;
 
-template <typename Operation, typename Siblings>
-void handleLyTreeOperation(DataNode* affectedNode, Operation operation, Siblings siblings, std::shared_ptr<internal_refcount> newRefs);
-
 template <typename NodeType, IterationType ITER_TYPE>
 class LIBYANG_CPP_EXPORT Iterator {
 public:
