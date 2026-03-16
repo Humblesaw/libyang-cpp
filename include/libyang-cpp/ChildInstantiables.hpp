@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
 */
 #pragma once
+#include <iterator>
 #include <libyang-cpp/SchemaNode.hpp>
 #include <libyang-cpp/export.h>
 
@@ -16,6 +17,11 @@ class Module;
 
 class LIBYANG_CPP_EXPORT ChildInstanstiablesIterator {
 public:
+    using iterator_category = std::input_iterator_tag;
+    using value_type = SchemaNode;
+    using reference = void;
+    using difference_type = std::ptrdiff_t;
+
     friend ChildInstanstiables;
     SchemaNode operator*() const;
     ChildInstanstiablesIterator& operator++();

@@ -264,6 +264,10 @@ TEST_CASE("SchemaNode")
             }
 
             REQUIRE(expectedPaths == actualPaths);
+
+            for (const auto& path : expectedPaths) {
+                REQUIRE(std::find_if(children->begin(), children->end(), [&path](const libyang::SchemaNode& node) { return node.path() == path; }) != children->end());
+            }
         }
 
         DOCTEST_SUBCASE("unimplemented module")
