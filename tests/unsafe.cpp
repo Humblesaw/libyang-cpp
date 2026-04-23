@@ -27,11 +27,11 @@ using node_deleter_t = decltype([](auto node) constexpr {
 TEST_CASE("Unsafe methods")
 {
     ly_ctx* ctx;
-    ly_ctx_new(ly_yang_module_dir(), 0, &ctx);
+    REQUIRE(ly_ctx_new(ly_yang_module_dir(), 0, &ctx) == LY_SUCCESS);
     // When wrapping raw lyd_nodes, the context struct however is not managed and needs to be released manually (for
     // example with a unique_ptr), like below.
     auto ctx_deleter = std::unique_ptr<ly_ctx, ctx_deleter_t>(ctx);
-    lys_parse_mem(ctx, example_schema.c_str(), LYS_IN_YANG, nullptr);
+    REQUIRE(lys_parse_mem(ctx, example_schema.c_str(), LYS_IN_YANG, nullptr) == LY_SUCCESS);
     auto data = R"({ "example-schema:leafInt32": 32 })";
 
     DOCTEST_SUBCASE("createUnmanagedContext")
@@ -52,7 +52,7 @@ TEST_CASE("Unsafe methods")
     DOCTEST_SUBCASE("wrapRawNode")
     {
         lyd_node* node;
-        lyd_parse_data_mem(ctx, data, LYD_JSON, 0, LYD_VALIDATE_PRESENT, &node);
+        REQUIRE(lyd_parse_data_mem(ctx, data, LYD_JSON, 0, LYD_VALIDATE_PRESENT, &node) == LY_SUCCESS);
 
         // The wrapped node does take ownership of the lyd_node* and deletes it on destruction of the class.
         auto wrapped = libyang::wrapRawNode(node);
@@ -81,7 +81,7 @@ TEST_CASE("Unsafe methods")
     DOCTEST_SUBCASE("wrapUnmanagedRawNode")
     {
         lyd_node* node;
-        lyd_parse_data_mem(ctx, data, LYD_JSON, 0, LYD_VALIDATE_PRESENT, &node);
+        REQUIRE(lyd_parse_data_mem(ctx, data, LYD_JSON, 0, LYD_VALIDATE_PRESENT, &node) == LY_SUCCESS);
         // With wrapConstRawNode, the node needs to be released manually.
         auto node_deleter = std::unique_ptr<lyd_node, node_deleter_t>(node);
 
@@ -105,7 +105,7 @@ TEST_CASE("Unsafe methods")
         DOCTEST_SUBCASE("Inserting an UNMANAGED node into an unmanaged node")
         {
             lyd_node* anotherNode;
-            lyd_new_path(nullptr, ctx, "/example-schema:leafInt8", "0", LYD_VALIDATE_PRESENT, &anotherNode);
+            REQUIRE(lyd_new_path(nullptr, ctx, "/example-schema:leafInt8", "0", LYD_VALIDATE_PRESENT, &anotherNode) == LY_SUCCESS);
             auto anotherNodeWrapped = libyang::wrapUnmanagedRawNode(const_cast<const lyd_node*>(anotherNode));
             wrapped.insertSibling(anotherNodeWrapped);
             // Both are still unmanaged, both are accessible.
@@ -131,7 +131,7 @@ TEST_CASE("Unsafe methods")
         DOCTEST_SUBCASE("Inserting a MANAGED node into an unmanaged node")
         {
             lyd_node* anotherNode;
-            lyd_new_path(nullptr, ctx, "/example-schema:leafInt8", "0", LYD_VALIDATE_PRESENT, &anotherNode);
+            REQUIRE(lyd_new_path(nullptr, ctx, "/example-schema:leafInt8", "0", LYD_VALIDATE_PRESENT, &anotherNode) == LY_SUCCESS);
             auto anotherNodeWrapped = libyang::wrapRawNode(anotherNode);
             wrapped.insertSibling(anotherNodeWrapped);
             // BOTH are now unmanaged, both are accessible.
@@ -159,7 +159,7 @@ TEST_CASE("Unsafe methods")
         DOCTEST_SUBCASE("Inserting a UNMANAGED node into a managed node")
         {
             lyd_node* anotherNode;
-            lyd_new_path(nullptr, ctx, "/example-schema:leafInt8", "0", LYD_VALIDATE_PRESENT, &anotherNode);
+            REQUIRE(lyd_new_path(nullptr, ctx, "/example-schema:leafInt8", "0", LYD_VALIDATE_PRESENT, &anotherNode) == LY_SUCCESS);
             auto anotherNodeWrapped = libyang::wrapRawNode(anotherNode);
             anotherNodeWrapped.insertSibling(wrapped);
             // BOTH are now managed by C++, both are accessible.
@@ -172,7 +172,7 @@ TEST_CASE("Unsafe methods")
         DOCTEST_SUBCASE("Query identity from unmanaged node")
         {
             lyd_node* node;
-            lyd_new_path(nullptr, ctx, "/example-schema:leafFoodTypedef", "example-schema:pizza", LYD_VALIDATE_PRESENT, &node);
+            REQUIRE(lyd_new_path(nullptr, ctx, "/example-schema:leafFoodTypedef", "example-schema:pizza", LYD_VALIDATE_PRESENT, &node) == LY_SUCCESS);
             auto wrappedNode = libyang::wrapUnmanagedRawNode(const_cast<const lyd_node*>(node));
 
             REQUIRE(wrappedNode.path() == "/example-schema:leafFoodTypedef");
