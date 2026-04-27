@@ -129,7 +129,7 @@ auto dataTypeFor(const std::string& payload)
 
 TEST_CASE("Data Node manipulation")
 {
-    libyang::Context ctx(std::nullopt, libyang::ContextOptions::NoYangLibrary | libyang::ContextOptions::DisableSearchCwd);
+    libyang::Context ctx(libyang::internalModuleDirectory(), libyang::ContextOptions::NoYangLibrary | libyang::ContextOptions::DisableSearchCwd);
     ctx.parseModule(example_schema, libyang::SchemaFormat::YANG);
     ctx.parseModule(example_schema2, libyang::SchemaFormat::YANG);
     ctx.parseModule(example_schema3, libyang::SchemaFormat::YANG);
@@ -2741,7 +2741,7 @@ TEST_CASE("Data Node manipulation")
     }
 
     DOCTEST_SUBCASE("comparing") {
-        libyang::Context ctxB(std::nullopt, libyang::ContextOptions::NoYangLibrary | libyang::ContextOptions::DisableSearchCwd);
+        libyang::Context ctxB(libyang::internalModuleDirectory(), libyang::ContextOptions::NoYangLibrary | libyang::ContextOptions::DisableSearchCwd);
         ctxB.parseModule(example_schema, libyang::SchemaFormat::YANG);
 
         // Differences from `data2`:
@@ -2777,7 +2777,7 @@ TEST_CASE("Data Node manipulation")
 
 TEST_CASE("union data types")
 {
-    std::optional<libyang::Context> ctxWithParsed{std::in_place, std::nullopt,
+    std::optional<libyang::Context> ctxWithParsed{std::in_place, libyang::internalModuleDirectory(),
         libyang::ContextOptions::SetPrivParsed | libyang::ContextOptions::NoYangLibrary | libyang::ContextOptions::DisableSearchCwd};
     ctxWithParsed->parseModule(with_inet_types_module, libyang::SchemaFormat::YANG);
     std::string input, expectedPlugin, expectedTypedef;

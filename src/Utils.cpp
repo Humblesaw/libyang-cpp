@@ -28,6 +28,16 @@ LogLevel setLogLevel(const LogLevel level)
     return utils::toLogLevel(ly_log_level(utils::toLogLevel(level)));
 }
 
+/**
+ * Get the path to the location with systemwide internal YANG modules
+ *
+ * Wraps ly_yang_module_dir().
+ */
+std::filesystem::path internalModuleDirectory()
+{
+    return std::filesystem::path{ly_yang_module_dir()};
+}
+
 bool SomeOrder::operator()(const DataNode& a, const DataNode& b) const
 {
     return getRawNode(a) < getRawNode(b);

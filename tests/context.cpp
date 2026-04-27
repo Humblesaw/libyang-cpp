@@ -66,7 +66,7 @@ const auto model_with_import = R"(
 
 TEST_CASE("context")
 {
-    std::optional<libyang::Context> ctx{std::in_place, std::nullopt, libyang::ContextOptions::NoYangLibrary | libyang::ContextOptions::DisableSearchCwd};
+    std::optional<libyang::Context> ctx{std::in_place, libyang::internalModuleDirectory(), libyang::ContextOptions::NoYangLibrary | libyang::ContextOptions::DisableSearchCwd};
 
     DOCTEST_SUBCASE("parseModule")
     {
@@ -408,7 +408,7 @@ TEST_CASE("context")
 
         DOCTEST_SUBCASE("Same module, different contexts")
         {
-            std::optional<libyang::Context> ctx2{std::in_place, std::nullopt, libyang::ContextOptions::NoYangLibrary | libyang::ContextOptions::DisableSearchCwd};
+            std::optional<libyang::Context> ctx2{std::in_place, libyang::internalModuleDirectory(), libyang::ContextOptions::NoYangLibrary | libyang::ContextOptions::DisableSearchCwd};
             ctx2->setSearchDir(TESTS_DIR / "yang");
 
             REQUIRE(mod != ctx2->loadModule("mod1", std::nullopt, {}));
@@ -742,7 +742,7 @@ TEST_CASE("context")
 
     DOCTEST_SUBCASE("schema printing")
     {
-        std::optional<libyang::Context> ctx_pp{std::in_place, std::nullopt, libyang::ContextOptions::NoYangLibrary | libyang::ContextOptions::DisableSearchCwd | libyang::ContextOptions::SetPrivParsed | libyang::ContextOptions::CompileObsolete};
+        std::optional<libyang::Context> ctx_pp{std::in_place, libyang::internalModuleDirectory(), libyang::ContextOptions::NoYangLibrary | libyang::ContextOptions::DisableSearchCwd | libyang::ContextOptions::SetPrivParsed | libyang::ContextOptions::CompileObsolete};
         auto mod = ctx_pp->parseModule(type_module, libyang::SchemaFormat::YANG);
 
         REQUIRE(mod.printStr(libyang::SchemaOutputFormat::Tree) == R"(module: type_module

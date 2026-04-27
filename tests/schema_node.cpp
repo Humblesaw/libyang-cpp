@@ -18,9 +18,9 @@ using namespace std::string_literals;
 
 TEST_CASE("SchemaNode")
 {
-    std::optional<libyang::Context> ctx{std::in_place, std::nullopt,
+    std::optional<libyang::Context> ctx{std::in_place, libyang::internalModuleDirectory(),
         libyang::ContextOptions::NoYangLibrary | libyang::ContextOptions::DisableSearchCwd | libyang::ContextOptions::CompileObsolete};
-    std::optional<libyang::Context> ctxWithParsed{std::in_place, std::nullopt,
+    std::optional<libyang::Context> ctxWithParsed{std::in_place, libyang::internalModuleDirectory(),
         libyang::ContextOptions::SetPrivParsed | libyang::ContextOptions::NoYangLibrary | libyang::ContextOptions::DisableSearchCwd};
     ctx->parseModule(example_schema, libyang::SchemaFormat::YANG);
     ctx->parseModule(type_module, libyang::SchemaFormat::YANG);

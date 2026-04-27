@@ -27,7 +27,7 @@ using node_deleter_t = decltype([](auto node) constexpr {
 TEST_CASE("Unsafe methods")
 {
     ly_ctx* ctx;
-    ly_ctx_new(nullptr, 0, &ctx);
+    ly_ctx_new(ly_yang_module_dir(), 0, &ctx);
     // When wrapping raw lyd_nodes, the context struct however is not managed and needs to be released manually (for
     // example with a unique_ptr), like below.
     auto ctx_deleter = std::unique_ptr<ly_ctx, ctx_deleter_t>(ctx);

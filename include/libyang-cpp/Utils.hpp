@@ -9,6 +9,7 @@
 #include <libyang-cpp/DataNode.hpp>
 #include <libyang-cpp/Enum.hpp>
 #include <libyang-cpp/export.h>
+#include <filesystem>
 #include <memory>
 #include <stdexcept>
 
@@ -21,6 +22,7 @@ struct lyd_node;
 namespace libyang {
 LIBYANG_CPP_EXPORT LogOptions setLogOptions(const libyang::LogOptions options);
 LIBYANG_CPP_EXPORT LogLevel setLogLevel(const LogLevel level);
+LIBYANG_CPP_EXPORT std::filesystem::path internalModuleDirectory();
 
 /**
  * @brief A generic libyang error. All other libyang errors inherit from this exception type.
